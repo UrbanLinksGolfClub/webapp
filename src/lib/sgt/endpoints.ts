@@ -9,14 +9,6 @@ export type SgtStanding = {
   [key: string]: unknown;
 };
 
-export type SgtWgrEntry = {
-  name: string;
-  total: number;
-  divisor: number;
-  wgr: number;
-  rank: number;
-};
-
 export type SgtTour = {
   tourId: number;
   name: string;
@@ -36,10 +28,6 @@ export function getTourStandings(tourId: string | number, grossOrNet?: "gross" |
 
 export function getTourStats(tourId: string | number) {
   return sgtGet<Record<string, SgtStanding[]>>("tours/stats", { tourId });
-}
-
-export function getWgrLeaderboard() {
-  return sgtGet<{ status: boolean; results: SgtWgrEntry[] }>("wgr/leaderboard");
 }
 
 export function getTournaments(tourId: string | number) {

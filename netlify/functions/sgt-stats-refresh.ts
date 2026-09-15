@@ -1,6 +1,6 @@
 import type { Config } from "@netlify/functions";
 import { getCachedOrFetch } from "../../src/lib/sgt/cache";
-import { getTours, getTourStats, getWgrLeaderboard } from "../../src/lib/sgt/endpoints";
+import { getTours, getTourStats } from "../../src/lib/sgt/endpoints";
 
 export default async () => {
   try {
@@ -10,13 +10,8 @@ export default async () => {
       fetcher: () => getTours(),
     });
 
-    await getCachedOrFetch({
-      endpoint: "wgr/leaderboard",
-      fetcher: () => getWgrLeaderboard(),
-    });
-
     for (const tour of tours) {
-      const tourId = String(tour.id);
+      const tourId = String(tour.tourId);
       await getCachedOrFetch({
         endpoint: "tours/stats",
         tourId,
