@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { CredentialsSignin } from "next-auth";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { authConfig } from "@/auth.config";
 
 class PendingApprovalError extends CredentialsSignin {
   code = "pending_approval";
@@ -13,9 +14,8 @@ class SuspendedError extends CredentialsSignin {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  trustHost: true,
+  ...authConfig,
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
   providers: [
     Credentials({
       credentials: {
@@ -49,20 +49,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = (user as { role: string }).role;
-      }
-      return token;
-    },
-    session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-      }
-      return session;
-    },
-  },
 });
