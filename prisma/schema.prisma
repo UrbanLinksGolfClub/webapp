@@ -1,0 +1,178 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [btree_gist]
+}
+
+enum MemberStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+enum MemberRole {
+  MEMBER
+  ADMIN
+}
+
+enum BookingStatus {
+  BOOKED
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingType {
+  CLOSED
+  OPEN
+}
+
+enum Amenity {
+  SIM
+  LOUNGE
+  GREEN
+  TABLE
+}
+
+enum MembershipType {
+  FOUNDING_MEMBER
+  RACCOON_RATE
+}
+
+model Member {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  passwordHash   String
+  name           String
+  phone          String?
+  address        String?
+  membershipType MembershipType?
+  pinCode        String?
+  sgtUsername    String?
+  status         MemberStatus    @default(PENDING)
+  role           MemberRole      @default(MEMBER)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  bookings     Booking[]
+  bookingJoins BookingJoin[]
+  eventRsvps   EventRsvp[]
+
+  @@map("members")
+}
+
+/// The club is a single physical space. A member reserves a time slot as the
+/// host, marking it CLOSED (private, whole club) or OPEN (other members may
+/// join and claim an amenity for that same slot).
+model Booking {
+  id          String        @id @default(cuid())
+  memberId    String
+  bookingType BookingType
+  startTime   DateTime
+  endTime     DateTime
+  status      BookingStatus @default(BOOKED)
+  noShow      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+
+  member Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  joins  BookingJoin[]
+
+  @@index([memberId, status, startTime])
+  @@index([bookingType, status, startTime])
+  @@map("bookings")
+}
+
+/// A member joining someone else's OPEN booking, claiming one amenity for
+/// that session. SIM capacity is shared (up to 4 incl. the host); LOUNGE,
+/// GREEN, and TABLE are exclusive to one joiner each. Enforced in
+/// lib/booking.ts, not at the DB level (capacity-N sharing isn't expressible
+/// as a plain constraint).
+model BookingJoin {
+  id        String   @id @default(cuid())
+  bookingId String
+  memberId  String
+  amenity   Amenity
+  joinedAt  DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, memberId])
+  @@index([bookingId, amenity])
+  @@map("booking_joins")
+}
+
+/// Club-owned photo used behind an event tile or hero band. Maps to a static
+/// asset in public/photos -- see lib/photos.ts.
+enum PhotoKey {
+  BAY_LOUNGE_WIDE
+  BAY_LOUNGE_FULL
+  CLUB_INTERIOR
+  LOUNGE
+  SIMULATOR
+  UNEEKOR_CAMERA
+  DATA_OVERLAY
+  SWING
+  PEBBLE_BEACH
+}
+
+model Event {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  location      String?
+  startTime     DateTime
+  rsvpDeadline  DateTime?
+  photoKey      PhotoKey  @default(CLUB_INTERIOR)
+  createdAt     DateTime  @default(now())
+
+  rsvps EventRsvp[]
+
+  @@index([startTime])
+  @@map("events")
+}
+
+model EventRsvp {
+  id        String   @id @default(cuid())
+  eventId   String
+  memberId  String
+  createdAt DateTime @default(now())
+
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, memberId])
+  @@map("event_rsvps")
+}
+
+/// Singleton row holding the current rotating SGT Club Admin API key.
+model SgtApiKey {
+  id          String   @id @default(cuid())
+  key         String
+  expiresAt   DateTime
+  refreshedAt DateTime @default(now())
+
+  @@map("sgt_api_key")
+}
+
+/// Cached responses from the SGT Club Admin API so pages don't hit SGT live.
+/// tourId is "" for endpoints that aren't tour-scoped (e.g. wgr/leaderboard).
+model SgtStatsCache {
+  id        String   @id @default(cuid())
+  clubUrl   String
+  tourId    String   @default("")
+  endpoint  String
+  payload   Json
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@unique([clubUrl, tourId, endpoint])
+  @@map("sgt_stats_cache")
+}
