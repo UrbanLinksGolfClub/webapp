@@ -1,5 +1,5 @@
 [build]
-  command = "npx prisma generate && npx prisma migrate deploy && npm run build"
+  command = "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run build"
 
 [functions]
   directory = "netlify/functions"
