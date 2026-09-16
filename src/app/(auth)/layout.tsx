@@ -5,7 +5,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-screen flex-col bg-ul-cream">
       <div className="relative flex h-60 shrink-0 items-center justify-center overflow-hidden">
-        <Image src={PHOTO_SRC.CLUB_INTERIOR} alt="" fill className="object-cover" />
+        <Image
+          src={PHOTO_SRC.CLUB_INTERIOR}
+          alt=""
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover"
+        />
         <div
           className="absolute inset-0"
           style={{ background: "linear-gradient(180deg, rgba(30,50,40,.55) 0%, rgba(30,50,40,.9) 100%)" }}

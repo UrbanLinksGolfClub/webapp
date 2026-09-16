@@ -71,6 +71,7 @@ export default async function ClubPage() {
           src={PHOTO_SRC.BAY_LOUNGE_WIDE}
           alt=""
           fill
+          sizes="100vw"
           className="object-cover opacity-30"
           priority
         />
@@ -81,14 +82,14 @@ export default async function ClubPage() {
               "linear-gradient(100deg, rgba(30,50,40,.95) 0%, rgba(30,50,40,.62) 100%)",
           }}
         />
-        <div className="relative mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-6 px-6 py-9">
-          <div>
+        <div className="relative mx-auto flex max-w-5xl flex-col gap-6 px-6 py-9 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <div className="font-heading text-[10px] font-semibold tracking-[0.28em] text-ul-gold">
               UP NEXT FOR YOU
             </div>
             {upNext ? (
               <>
-                <h1 className="mt-2 font-heading text-4xl font-medium leading-none text-ul-cream sm:text-5xl">
+                <h1 className="mt-2 font-heading text-3xl font-medium leading-tight text-ul-cream sm:text-4xl sm:leading-none md:text-5xl">
                   {formatUpNext(upNext.startTime)}
                 </h1>
                 <p className="font-accent mt-2 text-lg italic text-ul-cream/95">
@@ -100,7 +101,7 @@ export default async function ClubPage() {
               </>
             ) : (
               <>
-                <h1 className="mt-2 font-heading text-4xl font-medium leading-none text-ul-cream sm:text-5xl">
+                <h1 className="mt-2 font-heading text-3xl font-medium leading-tight text-ul-cream sm:text-4xl sm:leading-none md:text-5xl">
                   NOTHING BOOKED
                 </h1>
                 <p className="font-accent mt-2 text-lg italic text-ul-cream/95">
@@ -115,11 +116,11 @@ export default async function ClubPage() {
               MY RESERVATIONS
             </Link>
           </div>
-          <div className="text-right">
+          <div className="shrink-0 sm:text-right">
             <div className="font-heading text-[10px] tracking-[0.2em] text-ul-cream/75">
               STANDING RESERVATIONS
             </div>
-            <div className="mt-2 flex justify-end gap-1.5">
+            <div className="mt-2 flex justify-start gap-1.5 sm:justify-end">
               {Array.from({ length: MAX_STANDING_BOOKINGS }, (_, i) => (
                 <span
                   key={i}
@@ -166,7 +167,13 @@ export default async function ClubPage() {
           {nextEvent ? (
             <div className="max-w-md">
               <div className="relative h-[186px] overflow-hidden">
-                <Image src={PHOTO_SRC[nextEvent.photoKey]} alt="" fill className="object-cover" />
+                <Image
+                  src={PHOTO_SRC[nextEvent.photoKey]}
+                  alt=""
+                  fill
+                  sizes="(min-width: 768px) 448px, 100vw"
+                  className="object-cover"
+                />
                 <div
                   className="absolute inset-0"
                   style={{

@@ -36,7 +36,14 @@ export default async function EventsPage() {
         <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {hero && (
             <div id={hero.id} className="relative col-span-2 row-span-2 min-h-[430px] overflow-hidden">
-              <Image src={PHOTO_SRC[hero.photoKey]} alt="" fill className="object-cover" />
+              <Image
+                src={PHOTO_SRC[hero.photoKey]}
+                alt=""
+                fill
+                sizes="(min-width: 640px) 50vw, 100vw"
+                priority
+                className="object-cover"
+              />
               <div
                 className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(30,50,40,.95) 0%, rgba(30,50,40,.08) 65%)" }}
@@ -71,7 +78,13 @@ export default async function EventsPage() {
 
           {rest.map((e) => (
             <div key={e.id} id={e.id} className="relative col-span-2 min-h-[207px] overflow-hidden sm:col-span-1">
-              <Image src={PHOTO_SRC[e.photoKey]} alt="" fill className="object-cover" />
+              <Image
+                src={PHOTO_SRC[e.photoKey]}
+                alt=""
+                fill
+                sizes="(min-width: 640px) 25vw, 100vw"
+                className="object-cover"
+              />
               <div
                 className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(30,50,40,.93), rgba(30,50,40,.15))" }}

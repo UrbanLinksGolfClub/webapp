@@ -7,8 +7,16 @@ type ExistingBooking = { startTime: string; endTime: string };
 type BookingKind = "CLOSED" | "OPEN";
 type Slot = { hour: number; start: Date; end: Date; available: boolean };
 
+// Anchored to the club's own timezone, not the browser's -- otherwise a
+// browser in US time zones already sees UTC's "tomorrow" every evening,
+// and "today" becomes unreachable since it's also used as minDate.
 function toDateInputValue(d: Date) {
-  return d.toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(d);
+}
+
+function addDays(dateStr: string, delta: number) {
+  const [y, m, day] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, day + delta)).toISOString().slice(0, 10);
 }
 
 function dayLabel(d: Date, today: Date) {
@@ -40,11 +48,7 @@ export function ClubBookingWidget({
   const [refreshKey, setRefreshKey] = useState(0);
 
   const minDate = toDateInputValue(today);
-  const maxDate = useMemo(() => {
-    const d = new Date(today);
-    d.setDate(d.getDate() + 13);
-    return toDateInputValue(d);
-  }, [today]);
+  const maxDate = useMemo(() => addDays(minDate, 13), [minDate]);
 
   function goToDate(next: string) {
     if (next < minDate || next > maxDate) return;
@@ -52,9 +56,7 @@ export function ClubBookingWidget({
   }
 
   function shiftDay(delta: number) {
-    const d = new Date(`${date}T00:00:00`);
-    d.setDate(d.getDate() + delta);
-    goToDate(toDateInputValue(d));
+    goToDate(addDays(date, delta));
   }
 
   useEffect(() => {
