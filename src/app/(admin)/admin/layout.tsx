@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-screen grid-cols-[216px_1fr] bg-ul-cream">
+    <div className="min-h-screen bg-ul-cream sm:grid sm:grid-cols-[216px_1fr]">
       <AdminSidebar />
-      <main className="px-8 py-7">{children}</main>
+      <main className="px-5 py-6 sm:px-8 sm:py-7">{children}</main>
     </div>
   );
 }
