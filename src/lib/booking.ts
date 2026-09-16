@@ -1,6 +1,15 @@
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
-import type { BookingType, Amenity } from "@/generated/prisma/client";
+import type { Booking, BookingType, Amenity } from "@/generated/prisma/client";
 import { AMENITY_CAPACITY, amenityLabel } from "@/lib/amenities";
+import { notifyBookingConfirmed, notifyBookingCancelled, notifyHostJoined } from "@/lib/notify";
+
+// Notifications are a side effect of a booking mutation, never a reason to
+// fail one -- log and move on rather than letting a dead email/push
+// provider turn into a 500 for the member trying to book.
+function notifyInBackground(work: () => Promise<void>) {
+  after(() => work().catch((err) => console.error("Notification dispatch failed", err)));
+}
 
 export const MAX_ADVANCE_DAYS = 14;
 export const MAX_STANDING_BOOKINGS = 2;
@@ -83,7 +92,7 @@ export async function createBooking({
   const member = await prisma.member.findUniqueOrThrow({ where: { id: memberId } });
   assertWithinMembershipWindow(member.membershipType, startTime, endTime);
 
-  return prisma.$transaction(async (tx) => {
+  const booking = await prisma.$transaction(async (tx) => {
     // Serialize all booking mutations for this single-facility club.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BOOKING_LOCK_KEY})`;
 
@@ -108,6 +117,9 @@ export async function createBooking({
       throw err;
     }
   });
+
+  notifyInBackground(() => notifyBookingConfirmed(booking));
+  return booking;
 }
 
 export async function cancelBooking({
@@ -127,10 +139,19 @@ export async function cancelBooking({
   if (booking.status !== "BOOKED") {
     throw new BookingError("This reservation is already cancelled or completed.");
   }
-  return prisma.booking.update({
+
+  const cancelledBySomeoneElse = isAdmin && booking.memberId !== memberId;
+
+  const updated = await prisma.booking.update({
     where: { id: bookingId },
     data: { status: "CANCELLED" },
   });
+
+  if (cancelledBySomeoneElse) {
+    notifyInBackground(() => notifyBookingCancelled(updated));
+  }
+
+  return updated;
 }
 
 /** Join an open reservation, claiming one amenity for that session. */
@@ -143,7 +164,9 @@ export async function joinBooking({
   memberId: string;
   amenity: Amenity;
 }) {
-  return prisma.$transaction(async (tx) => {
+  let hostBooking: Booking | null = null;
+
+  const join = await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BOOKING_LOCK_KEY})`;
 
     const booking = await tx.booking.findUnique({
@@ -174,10 +197,26 @@ export async function joinBooking({
       throw new BookingError(`${amenityLabel(amenity)} is already claimed for that session.`);
     }
 
+    hostBooking = booking;
     return tx.bookingJoin.create({
       data: { bookingId, memberId, amenity },
     });
   });
+
+  if (hostBooking) {
+    const booking: Booking = hostBooking;
+    notifyInBackground(() =>
+      notifyHostJoined({
+        hostId: booking.memberId,
+        joinerId: memberId,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        amenity,
+      })
+    );
+  }
+
+  return join;
 }
 
 export async function leaveBooking({

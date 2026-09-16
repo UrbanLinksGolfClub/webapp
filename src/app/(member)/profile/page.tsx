@@ -6,6 +6,7 @@ import { getCachedOrFetch } from "@/lib/sgt/cache";
 import { getUserSgtData } from "@/lib/sgt/endpoints";
 import { PinDisplay } from "./pin-display";
 import { ProfileForm } from "./profile-form";
+import { PushOptIn } from "@/components/push-opt-in";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -75,6 +76,19 @@ export default async function ProfilePage() {
             address={member.address}
             sgtUsername={member.sgtUsername}
           />
+        </div>
+
+        <div className="border border-t-0 border-ul-cream-dark bg-ul-white p-6">
+          <div className="font-heading text-[9.5px] font-semibold tracking-[0.28em] text-ul-text-muted">
+            NOTIFICATIONS
+          </div>
+          <p className="mt-2 text-sm text-ul-text-muted">
+            Get notified by email and on your phone when someone joins your reservation or a
+            reservation is cancelled.
+          </p>
+          <div className="mt-4">
+            <PushOptIn />
+          </div>
         </div>
       </div>
 

@@ -61,11 +61,29 @@ model Member {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
-  bookings     Booking[]
-  bookingJoins BookingJoin[]
-  eventRsvps   EventRsvp[]
+  bookings          Booking[]
+  bookingJoins      BookingJoin[]
+  eventRsvps        EventRsvp[]
+  pushSubscriptions PushSubscription[]
 
   @@map("members")
+}
+
+/// One browser/device's Web Push subscription for a member. A member can
+/// have several (phone, laptop, etc); each is pushed to independently and
+/// pruned if the browser reports it's gone stale (410/404 on send).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  memberId  String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("push_subscriptions")
 }
 
 /// The club is a single physical space. A member reserves a time slot as the
