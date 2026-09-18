@@ -1,16 +1,6 @@
 import { getCachedOrFetch } from "@/lib/sgt/cache";
 import { getUserSgtData } from "@/lib/sgt/endpoints";
-
-// SGT's user-sgt-data payload isn't formally typed (it's a free-form blob
-// from a third-party API) -- match any key containing "hcp"/"handicap"
-// (e.g. the real field is SGT_COMBO_HCP) rather than assuming an exact
-// name, so this keeps working if the field gets renamed or prefixed.
-function findHandicap(data: Record<string, unknown>): [key: string, value: string] | null {
-  const entry = Object.entries(data).find(([key]) => /hcp|handicap/i.test(key));
-  if (!entry) return null;
-  const [key, value] = entry;
-  return typeof value === "number" || typeof value === "string" ? [key, String(value)] : null;
-}
+import { extractHandicap } from "@/lib/sgt/handicap";
 
 function formatFieldLabel(key: string): string {
   return key
@@ -42,7 +32,7 @@ export async function SgtStatsCard({
     }
   }
 
-  const handicap = sgtData ? findHandicap(sgtData) : null;
+  const handicap = sgtData ? extractHandicap(sgtData) : null;
   const [handicapKey, handicapValue] = handicap ?? [null, null];
 
   return (
