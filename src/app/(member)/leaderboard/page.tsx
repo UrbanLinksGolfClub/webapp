@@ -1,12 +1,8 @@
 import { getCachedOrFetch } from "@/lib/sgt/cache";
-import { getTours, getTourStandings, getTourStats } from "@/lib/sgt/endpoints";
+import { getTourStandings, getTourStats } from "@/lib/sgt/endpoints";
+import { getCachedTours, pickMostRecentTour } from "@/lib/sgt/tours";
 import { SgtNotConfigured, SgtErrorState } from "@/components/sgt-not-configured";
 import { StatsSection } from "./stats-section";
-
-function tourSortDate(t: { start_date?: string; end_date?: string }): number {
-  const d = t.end_date ?? t.start_date;
-  return d ? new Date(d).getTime() : 0;
-}
 
 export default async function LeaderboardPage(props: PageProps<"/leaderboard">) {
   if (!process.env.SGT_CLUB_URL) {
@@ -21,16 +17,8 @@ export default async function LeaderboardPage(props: PageProps<"/leaderboard">) 
   const searchParams = await props.searchParams;
 
   try {
-    const tours = await getCachedOrFetch({
-      endpoint: "tours/list",
-      ttlMs: 60 * 60 * 1000,
-      fetcher: () => getTours(),
-    });
-
-    // Default to whichever league was played most recently, by end date --
-    // SGT's "active" flag isn't a reliable signal of that (a league can be
-    // marked inactive while still being the most recent one played).
-    const mostRecent = [...tours].sort((a, b) => tourSortDate(b) - tourSortDate(a))[0];
+    const tours = await getCachedTours();
+    const mostRecent = pickMostRecentTour(tours);
 
     const requestedTourId = searchParams.tourId;
     const requested = Array.isArray(requestedTourId) ? requestedTourId[0] : requestedTourId;

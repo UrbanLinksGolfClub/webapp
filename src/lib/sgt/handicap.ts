@@ -1,30 +1,33 @@
 import { getCachedOrFetch } from "./cache";
-import { getUserSgtData } from "./endpoints";
+import { getTourStandings } from "./endpoints";
+import { getCachedTours, pickMostRecentTour } from "./tours";
 
-// SGT's user-sgt-data payload isn't formally typed (it's a free-form blob
-// from a third-party API) -- match any key containing "hcp"/"handicap"
-// (e.g. the real field is SGT_COMBO_HCP) rather than assuming an exact
-// name, so this keeps working if the field gets renamed or prefixed.
-export function extractHandicap(data: Record<string, unknown>): [key: string, value: string] | null {
-  const entry = Object.entries(data).find(([key]) => /hcp|handicap/i.test(key));
-  if (!entry) return null;
-  const [key, value] = entry;
-  return typeof value === "number" || typeof value === "string" ? [key, String(value)] : null;
-}
-
-/** Cached handicap lookup for contexts (like a member list) that only need
- * the one figure, not the full stats payload. Never throws -- a member with
- * no linked handle or a failed live fetch just shows no handicap. */
+/**
+ * Handicap comes from the standings of the most recently played league, not
+ * members/user-sgt-data -- that endpoint returns `user_id: false` and empty
+ * fields for every account we tested (confirmed against several real,
+ * currently-playing members), so it appears broken on SGT's side. Standings
+ * data is solid and already carries each player's hcp for that league.
+ *
+ * This also means a new league becomes the handicap source automatically as
+ * soon as it's the most recent one by date -- no code change needed when
+ * the club starts a new one.
+ */
 export async function getMemberHandicap(sgtUsername: string | null): Promise<string | null> {
   if (!sgtUsername || !process.env.SGT_CLUB_URL) return null;
   try {
-    const data = await getCachedOrFetch({
-      endpoint: "members/user-sgt-data",
-      tourId: sgtUsername,
-      ttlMs: 30 * 60 * 1000,
-      fetcher: () => getUserSgtData(sgtUsername),
+    const tours = await getCachedTours();
+    const mostRecent = pickMostRecentTour(tours);
+    if (!mostRecent) return null;
+
+    const standings = await getCachedOrFetch({
+      endpoint: "tours/standings",
+      tourId: String(mostRecent.tourId),
+      fetcher: () => getTourStandings(mostRecent.tourId),
     });
-    return extractHandicap(data)?.[1] ?? null;
+
+    const entry = standings.find((s) => s.user_name === sgtUsername);
+    return entry && typeof entry.hcp === "number" ? String(entry.hcp) : null;
   } catch {
     return null;
   }
