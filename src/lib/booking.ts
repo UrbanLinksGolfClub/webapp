@@ -2,7 +2,12 @@ import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import type { Booking, BookingType, Amenity } from "@/generated/prisma/client";
 import { AMENITY_CAPACITY, amenityLabel } from "@/lib/amenities";
-import { notifyBookingConfirmed, notifyBookingCancelled, notifyHostJoined } from "@/lib/notify";
+import {
+  notifyBookingConfirmed,
+  notifyBookingCancelled,
+  notifyHostJoined,
+  notifyBookingHandedOff,
+} from "@/lib/notify";
 import { CLUB_TIMEZONE } from "@/lib/time";
 
 // Notifications are a side effect of a booking mutation, never a reason to
@@ -122,6 +127,74 @@ export async function createBooking({
   return booking;
 }
 
+/**
+ * Only a closed reservation can be edited -- an open one can only ever be
+ * cancelled (see cancelBooking), since it may already have other members'
+ * amenity claims riding on its current time.
+ */
+export async function editBooking({
+  bookingId,
+  memberId,
+  startTime,
+  endTime,
+  bookingType,
+}: {
+  bookingId: string;
+  memberId: string;
+  startTime: Date;
+  endTime: Date;
+  bookingType: BookingType;
+}) {
+  const now = new Date();
+  const maxAdvance = new Date(now.getTime() + MAX_ADVANCE_DAYS * 24 * 60 * 60 * 1000);
+
+  if (startTime <= now) {
+    throw new BookingError("Reservations must be in the future.");
+  }
+  if (startTime > maxAdvance) {
+    throw new BookingError(
+      `Reservations can only be made up to ${MAX_ADVANCE_DAYS} days in advance.`
+    );
+  }
+  if (endTime <= startTime) {
+    throw new BookingError("Invalid time range.");
+  }
+
+  const member = await prisma.member.findUniqueOrThrow({ where: { id: memberId } });
+  assertWithinMembershipWindow(member.membershipType, startTime, endTime);
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BOOKING_LOCK_KEY})`;
+
+    const booking = await tx.booking.findUnique({ where: { id: bookingId } });
+    if (!booking) throw new BookingError("Reservation not found.");
+    if (booking.memberId !== memberId) {
+      throw new BookingError("You can only edit your own reservations.");
+    }
+    if (booking.status !== "BOOKED") {
+      throw new BookingError("This reservation is already cancelled or completed.");
+    }
+    if (booking.bookingType !== "CLOSED") {
+      throw new BookingError(
+        "Open reservations can't be edited -- cancel it instead. Anyone who already joined keeps their spot."
+      );
+    }
+
+    try {
+      return await tx.booking.update({
+        where: { id: bookingId },
+        data: { startTime, endTime, bookingType },
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("bookings_no_overlap") || message.includes("23P01")) {
+        throw new BookingError("The club is already reserved during that time.");
+      }
+      throw err;
+    }
+  });
+}
+
 export async function cancelBooking({
   bookingId,
   memberId,
@@ -131,27 +204,53 @@ export async function cancelBooking({
   memberId: string;
   isAdmin: boolean;
 }) {
-  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-  if (!booking) throw new BookingError("Reservation not found.");
-  if (!isAdmin && booking.memberId !== memberId) {
-    throw new BookingError("You can only cancel your own reservations.");
-  }
-  if (booking.status !== "BOOKED") {
-    throw new BookingError("This reservation is already cancelled or completed.");
-  }
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BOOKING_LOCK_KEY})`;
 
-  const cancelledBySomeoneElse = isAdmin && booking.memberId !== memberId;
+    const booking = await tx.booking.findUnique({
+      where: { id: bookingId },
+      include: { joins: { orderBy: { joinedAt: "asc" } } },
+    });
+    if (!booking) throw new BookingError("Reservation not found.");
+    if (!isAdmin && booking.memberId !== memberId) {
+      throw new BookingError("You can only cancel your own reservations.");
+    }
+    if (booking.status !== "BOOKED") {
+      throw new BookingError("This reservation is already cancelled or completed.");
+    }
 
-  const updated = await prisma.booking.update({
-    where: { id: bookingId },
-    data: { status: "CANCELLED" },
+    // An open reservation that other members already joined doesn't just
+    // free up -- whoever joined first inherits hosting so the group keeps
+    // the time, and the rest of the joins are untouched. Only an open
+    // reservation nobody joined, or a closed one, actually opens back up.
+    if (booking.bookingType === "OPEN" && booking.joins.length > 0) {
+      const [newHost] = booking.joins;
+      const previousHostId = booking.memberId;
+      await tx.bookingJoin.delete({ where: { id: newHost.id } });
+      const updated = await tx.booking.update({
+        where: { id: bookingId },
+        data: { memberId: newHost.memberId },
+      });
+
+      notifyInBackground(() =>
+        notifyBookingHandedOff(updated, newHost.memberId, previousHostId)
+      );
+      return updated;
+    }
+
+    const cancelledBySomeoneElse = isAdmin && booking.memberId !== memberId;
+
+    const updated = await tx.booking.update({
+      where: { id: bookingId },
+      data: { status: "CANCELLED" },
+    });
+
+    if (cancelledBySomeoneElse) {
+      notifyInBackground(() => notifyBookingCancelled(updated));
+    }
+
+    return updated;
   });
-
-  if (cancelledBySomeoneElse) {
-    notifyInBackground(() => notifyBookingCancelled(updated));
-  }
-
-  return updated;
 }
 
 /** Join an open reservation, claiming one amenity for that session. */

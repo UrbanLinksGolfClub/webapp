@@ -5,6 +5,7 @@ import { cancelBookingAction } from "@/lib/actions/booking-actions";
 import { amenityLabel } from "@/lib/booking";
 import { formatClubDateTime, formatClubTime } from "@/lib/time";
 import { LeaveButton } from "./leave-button";
+import { EditReservationModal } from "./edit-reservation-modal";
 
 export default async function MyReservationsPage() {
   const session = await auth();
@@ -70,17 +71,25 @@ export default async function MyReservationsPage() {
                       .join(", ")}
                   </p>
                 )}
-                <form
-                  action={async () => {
-                    "use server";
-                    await cancelBookingAction(b.id);
-                  }}
-                  className="mt-3"
-                >
-                  <button type="submit" className="font-heading text-[10px] tracking-[0.16em] text-red-700 underline">
-                    CANCEL RESERVATION
-                  </button>
-                </form>
+                <div className="mt-3 flex items-center gap-4">
+                  <form
+                    action={async () => {
+                      "use server";
+                      await cancelBookingAction(b.id);
+                    }}
+                  >
+                    <button type="submit" className="font-heading text-[10px] tracking-[0.16em] text-red-700 underline">
+                      CANCEL RESERVATION
+                    </button>
+                  </form>
+                  {b.bookingType === "CLOSED" && (
+                    <EditReservationModal
+                      bookingId={b.id}
+                      startTime={b.startTime.toISOString()}
+                      endTime={b.endTime.toISOString()}
+                    />
+                  )}
+                </div>
               </div>
             ))}
           </div>

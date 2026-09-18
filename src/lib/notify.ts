@@ -66,6 +66,22 @@ export async function notifyHostJoined({
   });
 }
 
+export async function notifyBookingHandedOff(
+  booking: Booking,
+  newHostId: string,
+  previousHostId: string
+) {
+  const slot = formatSlot(booking.startTime, booking.endTime);
+  const previousHost = await prisma.member.findUnique({ where: { id: previousHostId } });
+
+  await notifyMember(newHostId, {
+    subject: `You're now hosting — ${slot}`,
+    html: `<p>${previousHost?.name ?? "The host"} cancelled their <strong>${slot}</strong> reservation, but since you'd already joined, it's yours now -- no need to rebook.</p>`,
+    title: "You're now hosting",
+    body: slot,
+  });
+}
+
 export async function notifyBookingCancelled(booking: Booking) {
   const slot = formatSlot(booking.startTime, booking.endTime);
   await notifyMember(booking.memberId, {
