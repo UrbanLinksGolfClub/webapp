@@ -2,6 +2,7 @@ import Image from "next/image";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { PHOTO_SRC } from "@/lib/photos";
+import { formatClubDate, formatClubTime } from "@/lib/time";
 import { RsvpButton } from "./rsvp-button";
 
 export default async function EventsPage() {
@@ -53,8 +54,8 @@ export default async function EventsPage() {
               </div>
               <div className="absolute inset-x-0 bottom-0 p-7">
                 <div className="font-heading text-[11px] tracking-[0.24em] text-ul-gold">
-                  {hero.startTime.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}{" "}
-                  · {hero.startTime.toLocaleTimeString(undefined, { hour: "numeric" })}
+                  {formatClubDate(hero.startTime, { weekday: "short", month: "short", day: "numeric" })}{" "}
+                  · {formatClubTime(hero.startTime, { hour: "numeric" })}
                 </div>
                 <h2 className="mt-2 font-heading text-4xl leading-tight text-ul-cream">
                   {hero.title}
@@ -69,7 +70,7 @@ export default async function EventsPage() {
                   <span className="ml-4 text-xs text-ul-cream/70">
                     {hero._count.rsvps} in
                     {hero.rsvpDeadline &&
-                      ` · RSVP by ${hero.rsvpDeadline.toLocaleDateString(undefined, { weekday: "long" })}`}
+                      ` · RSVP by ${formatClubDate(hero.rsvpDeadline, { weekday: "long" })}`}
                   </span>
                 </div>
               </div>
@@ -91,8 +92,8 @@ export default async function EventsPage() {
               />
               <div className="absolute inset-x-0 bottom-0 p-4">
                 <div className="font-heading text-[9px] tracking-[0.22em] text-ul-gold">
-                  {e.startTime.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}{" "}
-                  · {e.startTime.toLocaleTimeString(undefined, { hour: "numeric" })}
+                  {formatClubDate(e.startTime, { weekday: "short", month: "short", day: "numeric" })}{" "}
+                  · {formatClubTime(e.startTime, { hour: "numeric" })}
                 </div>
                 <div className="mt-1 font-heading text-xl leading-tight text-ul-cream">
                   {e.title}

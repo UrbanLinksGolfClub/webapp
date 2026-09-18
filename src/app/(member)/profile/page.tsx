@@ -7,6 +7,7 @@ import { getUserSgtData } from "@/lib/sgt/endpoints";
 import { PinDisplay } from "./pin-display";
 import { ProfileForm } from "./profile-form";
 import { PushOptIn } from "@/components/push-opt-in";
+import { formatClubDate } from "@/lib/time";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -14,7 +15,7 @@ export default async function ProfilePage() {
     where: { id: session!.user.id },
   });
 
-  const memberSince = member.createdAt.toLocaleDateString(undefined, {
+  const memberSince = formatClubDate(member.createdAt, {
     month: "long",
     year: "numeric",
   });

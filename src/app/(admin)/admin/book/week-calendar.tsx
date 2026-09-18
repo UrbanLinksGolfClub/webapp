@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cancelBookingAction } from "@/lib/actions/booking-actions";
 import { toggleNoShowAction } from "@/lib/actions/admin-booking-actions";
+import { addClubDays, clubDateKey, clubWallTimeToDate, formatClubDateTime, formatClubTime } from "@/lib/time";
 
 type Booking = {
   id: string;
@@ -28,21 +29,18 @@ export function WeekCalendar({
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const start = new Date(weekStart);
+  const startKey = clubDateKey(new Date(weekStart));
 
-  const days = useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        return d;
-      }),
-    [weekStart]
+  // Day keys (Y-M-D in the club's own timezone), not browser-local dates --
+  // otherwise an admin browsing from outside Eastern time would see
+  // bookings shifted onto the wrong day of the week.
+  const dayKeys = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addClubDays(startKey, i)),
+    [startKey]
   );
 
-  function bookingAt(day: Date, hour: number): Booking | undefined {
-    const cellStart = new Date(day);
-    cellStart.setHours(hour, 0, 0, 0);
+  function bookingAt(dayKey: string, hour: number): Booking | undefined {
+    const cellStart = clubWallTimeToDate(dayKey, hour);
     const cellEnd = new Date(cellStart.getTime() + 60 * 60 * 1000);
     return bookings.find((b) => {
       const bs = new Date(b.startTime);
@@ -93,14 +91,17 @@ export function WeekCalendar({
             ))}
           </div>
           <div className="mt-2 grid gap-1">
-            {days.map((day, di) => (
-              <div key={di} className="flex items-center gap-0.5">
+            {dayKeys.map((dayKey) => {
+              const [, , dayOfMonth] = dayKey.split("-").map(Number);
+              const dayOfWeek = new Date(`${dayKey}T00:00:00Z`).getUTCDay();
+              return (
+              <div key={dayKey} className="flex items-center gap-0.5">
                 <div className="w-[86px] font-heading text-[11px] tracking-[0.08em] text-ul-green">
-                  {DAY_LABELS[day.getDay()]} {day.getDate()}
+                  {DAY_LABELS[dayOfWeek]} {dayOfMonth}
                 </div>
                 <div className="grid flex-1 gap-0.5" style={{ gridTemplateColumns: "repeat(24, 1fr)" }}>
                   {HOURS.map((h) => {
-                    const b = bookingAt(day, h);
+                    const b = bookingAt(dayKey, h);
                     return (
                       <button
                         key={h}
@@ -121,7 +122,8 @@ export function WeekCalendar({
                   })}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         <p className="font-accent mt-4 text-base italic text-ul-text-muted">
@@ -133,11 +135,11 @@ export function WeekCalendar({
         <div className="mt-5 border border-ul-cream-dark border-t-[3px] border-t-ul-gold bg-ul-white p-5">
           <div className="font-heading text-[9.5px] font-semibold tracking-[0.26em] text-ul-text-muted">
             SELECTED ·{" "}
-            {new Date(selected.startTime).toLocaleString(undefined, {
+            {formatClubDateTime(new Date(selected.startTime), {
               weekday: "short",
               hour: "numeric",
             })}
-            –{new Date(selected.endTime).toLocaleTimeString(undefined, { hour: "numeric" })}
+            –{formatClubTime(new Date(selected.endTime), { hour: "numeric" })}
           </div>
           <div className="mt-2 font-heading text-xl text-ul-green">
             {selected.hostName.toUpperCase()}

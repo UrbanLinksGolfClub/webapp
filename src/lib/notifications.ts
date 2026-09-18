@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { formatClubDate, formatClubDateTime } from "@/lib/time";
 
 export type Notification = { id: string; text: string };
 
@@ -18,7 +19,7 @@ export async function getRecentNotifications(memberId: string): Promise<Notifica
   for (const j of recentJoins) {
     notifications.push({
       id: `join-${j.id}`,
-      text: `${j.member.name} joined your ${j.booking.startTime.toLocaleDateString(undefined, { weekday: "long" })} reservation`,
+      text: `${j.member.name} joined your ${formatClubDate(j.booking.startTime, { weekday: "long" })} reservation`,
     });
   }
 
@@ -29,7 +30,7 @@ export async function getRecentNotifications(memberId: string): Promise<Notifica
   if (soonEvent?.rsvpDeadline) {
     notifications.push({
       id: `event-${soonEvent.id}`,
-      text: `${soonEvent.title} RSVP closes ${soonEvent.rsvpDeadline.toLocaleDateString(undefined, { weekday: "long" })}`,
+      text: `${soonEvent.title} RSVP closes ${formatClubDate(soonEvent.rsvpDeadline, { weekday: "long" })}`,
     });
   }
 
@@ -46,7 +47,7 @@ export async function getRecentNotifications(memberId: string): Promise<Notifica
   if (newOpen) {
     notifications.push({
       id: `open-${newOpen.id}`,
-      text: `${newOpen.member.name} opened ${newOpen.startTime.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}`,
+      text: `${newOpen.member.name} opened ${formatClubDateTime(newOpen.startTime, { weekday: "short", hour: "numeric", minute: "2-digit" })}`,
     });
   }
 

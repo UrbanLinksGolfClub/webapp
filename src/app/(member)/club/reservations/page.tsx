@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { cancelBookingAction } from "@/lib/actions/booking-actions";
 import { amenityLabel } from "@/lib/booking";
+import { formatClubDateTime, formatClubTime } from "@/lib/time";
 import { LeaveButton } from "./leave-button";
 
 export default async function MyReservationsPage() {
@@ -47,7 +48,7 @@ export default async function MyReservationsPage() {
               <div key={b.id} className="border border-ul-cream-dark bg-ul-white p-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="font-heading text-lg text-ul-green">
-                    {b.startTime.toLocaleString(undefined, {
+                    {formatClubDateTime(b.startTime, {
                       weekday: "short",
                       month: "short",
                       day: "numeric",
@@ -55,7 +56,7 @@ export default async function MyReservationsPage() {
                       minute: "2-digit",
                     })}
                     {" – "}
-                    {b.endTime.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                    {formatClubTime(b.endTime, { hour: "numeric", minute: "2-digit" })}
                   </span>
                   <span className="font-heading text-[10px] tracking-[0.16em] text-ul-gold-dark">
                     {b.bookingType === "OPEN" ? "OPEN" : "CLOSED"}
@@ -98,7 +99,7 @@ export default async function MyReservationsPage() {
               <div key={j.id} className="border border-ul-cream-dark bg-ul-white p-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="font-heading text-lg text-ul-green">
-                    {j.booking.startTime.toLocaleString(undefined, {
+                    {formatClubDateTime(j.booking.startTime, {
                       weekday: "short",
                       month: "short",
                       day: "numeric",

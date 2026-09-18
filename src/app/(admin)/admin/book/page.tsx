@@ -1,18 +1,11 @@
 import { prisma } from "@/lib/db";
+import { addClubDays, clubDateKey, clubWallTimeToDate, formatClubDate, startOfClubWeek } from "@/lib/time";
 import { BlockClubForm } from "./block-club-form";
 import { WeekCalendar } from "./week-calendar";
 
-function startOfWeek(d: Date): Date {
-  const day = d.getDay();
-  const start = new Date(d);
-  start.setDate(d.getDate() - day);
-  start.setHours(0, 0, 0, 0);
-  return start;
-}
-
 export default async function AdminBookPage() {
-  const weekStart = startOfWeek(new Date());
-  const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const weekStart = startOfClubWeek();
+  const weekEnd = clubWallTimeToDate(addClubDays(clubDateKey(weekStart), 7), 0);
 
   const bookings = await prisma.booking.findMany({
     where: {
@@ -38,9 +31,9 @@ export default async function AdminBookPage() {
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
           <div className="font-heading text-[9.5px] font-semibold tracking-[0.28em] text-ul-gold-dark">
-            {weekStart.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" }).toUpperCase()}
+            {formatClubDate(weekStart, { weekday: "long", month: "short", day: "numeric" }).toUpperCase()}
             {" — "}
-            {new Date(weekEnd.getTime() - 1).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" }).toUpperCase()}
+            {formatClubDate(new Date(weekEnd.getTime() - 1), { weekday: "long", month: "short", day: "numeric" }).toUpperCase()}
           </div>
           <h1 className="mt-1 font-heading text-3xl text-ul-green">THE BOOK</h1>
         </div>

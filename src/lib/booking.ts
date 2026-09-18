@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import type { Booking, BookingType, Amenity } from "@/generated/prisma/client";
 import { AMENITY_CAPACITY, amenityLabel } from "@/lib/amenities";
 import { notifyBookingConfirmed, notifyBookingCancelled, notifyHostJoined } from "@/lib/notify";
+import { CLUB_TIMEZONE } from "@/lib/time";
 
 // Notifications are a side effect of a booking mutation, never a reason to
 // fail one -- log and move on rather than letting a dead email/push
@@ -14,9 +15,8 @@ function notifyInBackground(work: () => Promise<void>) {
 export const MAX_ADVANCE_DAYS = 14;
 export const MAX_STANDING_BOOKINGS = 2;
 
-// The club's physical location -- used to resolve "12am-8am" for Raccoon
-// Rate members against the club's local wall-clock time, not the server's.
-const CLUB_TIMEZONE = "America/New_York";
+// Used to resolve "12am-8am" for Raccoon Rate members against the club's
+// local wall-clock time, not the server's.
 const RACCOON_RATE_WINDOW_END_HOUR = 8;
 
 // Fixed key for a Postgres advisory lock scoped to booking mutations. The

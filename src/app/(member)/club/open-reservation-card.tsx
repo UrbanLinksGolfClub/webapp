@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AMENITY_CAPACITY, amenityLabel } from "@/lib/amenities";
+import { formatClubDate, formatClubTime } from "@/lib/time";
 
 type Amenity = "SIM" | "LOUNGE" | "GREEN" | "TABLE";
 
@@ -56,9 +57,8 @@ export function OpenReservationCard({ booking }: { booking: Booking }) {
     <div className="border border-ul-cream-dark border-l-[3px] border-l-ul-gold bg-ul-white p-5">
       <div className="flex items-baseline justify-between">
         <span className="font-heading text-lg text-ul-green">
-          {start.toLocaleDateString(undefined, { weekday: "short" }).toUpperCase()} ·{" "}
-          {start.toLocaleTimeString(undefined, { hour: "numeric" })}–
-          {end.toLocaleTimeString(undefined, { hour: "numeric" })}
+          {formatClubDate(start, { weekday: "short" }).toUpperCase()} ·{" "}
+          {formatClubTime(start, { hour: "numeric" })}–{formatClubTime(end, { hour: "numeric" })}
         </span>
         <span className="font-heading text-[10px] tracking-[0.16em] text-ul-gold-dark">
           {openSpots} SPOT{openSpots === 1 ? "" : "S"}

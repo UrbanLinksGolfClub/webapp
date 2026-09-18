@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { formatClubDateTime } from "@/lib/time";
 import { CreateEventForm } from "./create-event-form";
 import { deleteEventAction } from "@/lib/actions/event-actions";
 
@@ -27,7 +28,7 @@ export default async function AdminEventsPage() {
               <tr key={e.id}>
                 <td className="p-3 text-ul-green">{e.title}</td>
                 <td className="p-3 text-ul-green">
-                  {e.startTime.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                  {formatClubDateTime(e.startTime, { dateStyle: "medium", timeStyle: "short" })}
                 </td>
                 <td className="p-3 text-ul-green">{e._count.rsvps}</td>
                 <td className="p-3">

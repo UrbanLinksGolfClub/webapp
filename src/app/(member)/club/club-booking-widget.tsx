@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { addClubDays, clubDateKey, formatClubDate } from "@/lib/time";
 
 type ExistingBooking = { startTime: string; endTime: string };
 type BookingKind = "CLOSED" | "OPEN";
@@ -10,18 +11,12 @@ type Slot = { hour: number; start: Date; end: Date; available: boolean };
 // Anchored to the club's own timezone, not the browser's -- otherwise a
 // browser in US time zones already sees UTC's "tomorrow" every evening,
 // and "today" becomes unreachable since it's also used as minDate.
-function toDateInputValue(d: Date) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(d);
-}
+const toDateInputValue = clubDateKey;
+const addDays = addClubDays;
 
-function addDays(dateStr: string, delta: number) {
-  const [y, m, day] = dateStr.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, day + delta)).toISOString().slice(0, 10);
-}
-
-function dayLabel(d: Date, today: Date) {
-  if (d.toDateString() === today.toDateString()) return "TODAY";
-  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric" }).toUpperCase();
+function dayLabel(dateKey: string, todayKey: string) {
+  if (dateKey === todayKey) return "TODAY";
+  return formatClubDate(new Date(`${dateKey}T12:00:00Z`), { weekday: "short", day: "numeric" }).toUpperCase();
 }
 
 function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
@@ -37,7 +32,8 @@ export function ClubBookingWidget({
 }) {
   const router = useRouter();
   const today = useMemo(() => new Date(), []);
-  const [date, setDate] = useState(toDateInputValue(today));
+  const todayKey = toDateInputValue(today);
+  const [date, setDate] = useState(todayKey);
   const [bookings, setBookings] = useState<ExistingBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
@@ -47,7 +43,7 @@ export function ClubBookingWidget({
   const [submitting, setSubmitting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const minDate = toDateInputValue(today);
+  const minDate = todayKey;
   const maxDate = useMemo(() => addDays(minDate, 13), [minDate]);
 
   function goToDate(next: string) {
@@ -150,7 +146,7 @@ export function ClubBookingWidget({
           ‹
         </button>
         <span className="font-heading text-lg tracking-wide text-ul-green">
-          {dayLabel(new Date(`${date}T00:00:00`), today)}
+          {dayLabel(date, todayKey)}
         </span>
         <button
           type="button"
@@ -222,7 +218,7 @@ export function ClubBookingWidget({
             </div>
             <div className="mt-2 font-heading text-3xl text-ul-green">
               {selectedSlot.start.toLocaleTimeString(undefined, { hour: "numeric" })}{" "}
-              {dayLabel(selectedSlot.start, today)}
+              {dayLabel(clubDateKey(selectedSlot.start), todayKey)}
             </div>
 
             <div className="mt-5">

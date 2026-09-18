@@ -2,16 +2,13 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { sendPushToMember } from "@/lib/push";
 import { amenityLabel } from "@/lib/amenities";
+import { formatClubDate, formatClubTime } from "@/lib/time";
 import type { Amenity, Booking } from "@/generated/prisma/client";
 
 function formatSlot(start: Date, end: Date) {
-  const day = start.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-  });
-  const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const day = formatClubDate(start, { weekday: "long", month: "short", day: "numeric" });
+  const startTime = formatClubTime(start, { hour: "numeric", minute: "2-digit" });
+  const endTime = formatClubTime(end, { hour: "numeric", minute: "2-digit" });
   return `${day}, ${startTime}–${endTime}`;
 }
 

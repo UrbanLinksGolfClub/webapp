@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { MAX_STANDING_BOOKINGS } from "@/lib/booking";
 import { getRecentNotifications } from "@/lib/notifications";
 import { PHOTO_SRC } from "@/lib/photos";
+import { CLUB_TIMEZONE, formatClubDate, formatClubTime } from "@/lib/time";
 import { ClubBookingWidget } from "./club-booking-widget";
 import { OpenReservationCard } from "./open-reservation-card";
 
@@ -183,18 +184,18 @@ export default async function ClubPage() {
                 />
                 <div className="absolute inset-x-0 bottom-0 p-5">
                   <div className="font-heading text-[9px] tracking-[0.24em] text-ul-gold">
-                    {nextEvent.startTime.toLocaleDateString(undefined, {
+                    {formatClubDate(nextEvent.startTime, {
                       weekday: "short",
                       month: "short",
                       day: "numeric",
                     })}{" "}
-                    · {nextEvent.startTime.toLocaleTimeString(undefined, { hour: "numeric" })}
+                    · {formatClubTime(nextEvent.startTime, { hour: "numeric" })}
                   </div>
                   <div className="mt-1 font-heading text-2xl text-ul-cream">{nextEvent.title}</div>
                   <div className="mt-1 text-xs text-ul-cream/75">
                     {nextEvent._count.rsvps} members in
                     {nextEvent.rsvpDeadline &&
-                      ` · RSVP by ${nextEvent.rsvpDeadline.toLocaleDateString(undefined, { weekday: "long" })}`}
+                      ` · RSVP by ${formatClubDate(nextEvent.rsvpDeadline, { weekday: "long" })}`}
                   </div>
                 </div>
               </div>
@@ -222,14 +223,17 @@ export default async function ClubPage() {
   );
 }
 
+function clubDateKey(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: CLUB_TIMEZONE }).format(d);
+}
+
 function formatUpNext(start: Date): string {
   const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  const time = start.toLocaleTimeString(undefined, { hour: "numeric" }).replace(" ", " ");
-  if (start.toDateString() === now.toDateString()) return `TODAY, ${time}`;
-  if (start.toDateString() === tomorrow.toDateString()) return `TOMORROW, ${time}`;
-  return `${start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}, ${time}`;
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const time = formatClubTime(start, { hour: "numeric" });
+  if (clubDateKey(start) === clubDateKey(now)) return `TODAY, ${time}`;
+  if (clubDateKey(start) === clubDateKey(tomorrow)) return `TOMORROW, ${time}`;
+  return `${formatClubDate(start, { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}, ${time}`;
 }
 
 function durationLabel(start: Date, end: Date): string {
