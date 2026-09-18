@@ -5,7 +5,7 @@ import { authConfig } from "@/auth.config";
 const { auth } = NextAuth(authConfig);
 
 const ADMIN_PREFIX = "/admin";
-const MEMBER_PREFIXES = ["/club", "/events", "/leaderboard", "/profile"];
+const MEMBER_PREFIXES = ["/club", "/events", "/leaderboard", "/members", "/profile"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -32,6 +32,7 @@ export const config = {
     "/club/:path*",
     "/events/:path*",
     "/leaderboard/:path*",
+    "/members/:path*",
     "/profile/:path*",
   ],
 };

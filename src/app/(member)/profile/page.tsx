@@ -2,11 +2,10 @@ import Image from "next/image";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { formatMembershipType } from "@/lib/format";
-import { getCachedOrFetch } from "@/lib/sgt/cache";
-import { getUserSgtData } from "@/lib/sgt/endpoints";
 import { PinDisplay } from "./pin-display";
 import { ProfileForm } from "./profile-form";
 import { PushOptIn } from "@/components/push-opt-in";
+import { SgtStatsCard } from "@/components/sgt-stats-card";
 import { formatClubDate } from "@/lib/time";
 
 export default async function ProfilePage() {
@@ -19,21 +18,6 @@ export default async function ProfilePage() {
     month: "long",
     year: "numeric",
   });
-
-  let sgtData: Record<string, unknown> | null = null;
-  let sgtError = false;
-  if (member.sgtUsername && process.env.SGT_CLUB_URL) {
-    try {
-      sgtData = await getCachedOrFetch({
-        endpoint: "members/user-sgt-data",
-        tourId: member.sgtUsername,
-        ttlMs: 30 * 60 * 1000,
-        fetcher: () => getUserSgtData(member.sgtUsername!),
-      });
-    } catch {
-      sgtError = true;
-    }
-  }
 
   return (
     <div className="mx-auto grid max-w-5xl gap-7 px-6 py-8 lg:grid-cols-[352px_1fr]">
@@ -94,38 +78,10 @@ export default async function ProfilePage() {
       </div>
 
       <div className="space-y-0">
-        <div className="border border-ul-cream-dark bg-ul-white p-6">
-          <div className="font-heading text-[9.5px] font-semibold tracking-[0.28em] text-ul-text-muted">
-            THE NUMBERS
-          </div>
-          {!member.sgtUsername ? (
-            <p className="mt-3 text-sm text-ul-text-muted">
-              Link your SGT handle above to pull in your stats.
-            </p>
-          ) : !process.env.SGT_CLUB_URL ? (
-            <p className="mt-3 text-sm text-ul-text-muted">
-              Simulator Golf Tour isn&apos;t connected for the club yet.
-            </p>
-          ) : sgtError || !sgtData ? (
-            <p className="mt-3 text-sm text-ul-text-muted">
-              Couldn&apos;t load your SGT stats right now.
-            </p>
-          ) : (
-            <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-              {Object.entries(sgtData)
-                .filter(([, v]) => typeof v === "number" || typeof v === "string")
-                .slice(0, 9)
-                .map(([key, value]) => (
-                  <div key={key}>
-                    <dt className="font-heading text-[9px] tracking-[0.16em] text-ul-text-muted">
-                      {key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toUpperCase()}
-                    </dt>
-                    <dd className="mt-1 font-heading text-xl text-ul-green">{String(value)}</dd>
-                  </div>
-                ))}
-            </dl>
-          )}
-        </div>
+        <SgtStatsCard
+          sgtUsername={member.sgtUsername}
+          emptyMessage="Link your SGT handle above to pull in your stats."
+        />
       </div>
     </div>
   );
