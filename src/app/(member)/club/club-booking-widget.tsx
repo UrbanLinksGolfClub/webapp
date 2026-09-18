@@ -4,9 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addClubDays, clubDateKey, formatClubDate } from "@/lib/time";
 
-type ExistingBooking = { startTime: string; endTime: string };
 type BookingKind = "CLOSED" | "OPEN";
-type Slot = { hour: number; start: Date; end: Date; available: boolean };
+type ExistingBooking = { startTime: string; endTime: string; bookingType: BookingKind };
+type Slot = {
+  hour: number;
+  start: Date;
+  end: Date;
+  available: boolean;
+  bookingType: BookingKind | null;
+};
 
 // Anchored to the club's own timezone, not the browser's -- otherwise a
 // browser in US time zones already sees UTC's "tomorrow" every evening,
@@ -86,10 +92,16 @@ export function ClubBookingWidget({
       // and end within 12am-8am -- hour 7 (7-8am) is the last valid one.
       if (isRaccoonRate && start.getHours() >= 8) return null;
       const isPast = start <= now;
-      const taken = bookings.some((b) =>
+      const conflicting = bookings.find((b) =>
         overlaps(start, end, new Date(b.startTime), new Date(b.endTime))
       );
-      return { hour, start, end, available: !isPast && !taken };
+      return {
+        hour,
+        start,
+        end,
+        available: !isPast && !conflicting,
+        bookingType: conflicting?.bookingType ?? null,
+      };
     }).filter((s): s is Slot => s !== null);
   }, [date, bookings, isRaccoonRate]);
 
@@ -192,7 +204,7 @@ export function ClubBookingWidget({
               <span
                 className={`font-heading text-[10px] tracking-[0.16em] ${slot.available ? "text-ul-gold-dark" : "text-ul-text-muted"}`}
               >
-                {slot.available ? "AVAILABLE — RESERVE" : "TAKEN"}
+                {slot.available ? "AVAILABLE — RESERVE" : slot.bookingType === "OPEN" ? "OPEN" : "CLOSED"}
               </span>
             </button>
           ))}
