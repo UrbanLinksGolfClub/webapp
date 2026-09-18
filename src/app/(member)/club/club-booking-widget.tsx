@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addClubDays, clubDateKey, formatClubDate } from "@/lib/time";
+import { usePolling } from "@/lib/use-polling";
 
 type BookingKind = "CLOSED" | "OPEN";
 type ExistingBooking = { startTime: string; endTime: string; bookingType: BookingKind };
@@ -61,23 +62,33 @@ export function ClubBookingWidget({
     goToDate(addDays(date, delta));
   }
 
-  useEffect(() => {
-    let cancelled = false;
-    const from = new Date(`${date}T00:00:00`);
+  const dateRef = useRef(date);
+  dateRef.current = date;
+
+  async function loadBookings(showLoading: boolean) {
+    const forDate = date;
+    const from = new Date(`${forDate}T00:00:00`);
     const to = new Date(from.getTime() + 24 * 60 * 60 * 1000);
-    setLoading(true);
-    fetch(`/api/bookings?from=${from.toISOString()}&to=${to.toISOString()}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (!cancelled) setBookings(d.bookings ?? []);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    if (showLoading) setLoading(true);
+    try {
+      const res = await fetch(`/api/bookings?from=${from.toISOString()}&to=${to.toISOString()}`);
+      const d = await res.json();
+      // Discard if the day changed while this was in flight -- otherwise a
+      // slow response for a day the member already navigated away from
+      // could clobber what's now showing.
+      if (dateRef.current === forDate) setBookings(d.bookings ?? []);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadBookings(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, refreshKey]);
+
+  // Pick up bookings/joins made by other members without a manual reload.
+  usePolling(() => loadBookings(false), 20000);
 
   const standingFull = standingCount >= 2;
 

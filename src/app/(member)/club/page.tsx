@@ -7,7 +7,7 @@ import { getRecentNotifications } from "@/lib/notifications";
 import { PHOTO_SRC } from "@/lib/photos";
 import { CLUB_TIMEZONE, formatClubDate, formatClubTime } from "@/lib/time";
 import { ClubBookingWidget } from "./club-booking-widget";
-import { OpenReservationCard } from "./open-reservation-card";
+import { OpenReservationsSection } from "./open-reservations-section";
 
 export default async function ClubPage() {
   const session = await auth();
@@ -33,7 +33,10 @@ export default async function ClubPage() {
           memberId: { not: memberId },
           startTime: { gt: now },
         },
-        include: { member: true, joins: { include: { member: true } } },
+        include: {
+          member: { select: { name: true } },
+          joins: { include: { member: { select: { name: true } } } },
+        },
         orderBy: { startTime: "asc" },
         take: 6,
       }),
@@ -142,15 +145,13 @@ export default async function ClubPage() {
           <div className="mb-4 font-heading text-[10px] font-semibold tracking-[0.28em] text-ul-text-muted">
             OPEN RESERVATIONS — JOIN FREE
           </div>
-          {openReservations.length === 0 ? (
-            <p className="text-sm text-ul-text-muted">Nothing open right now.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {openReservations.map((b) => (
-                <OpenReservationCard key={b.id} booking={b} />
-              ))}
-            </div>
-          )}
+          <OpenReservationsSection
+            initial={openReservations.map((b) => ({
+              ...b,
+              startTime: b.startTime.toISOString(),
+              endTime: b.endTime.toISOString(),
+            }))}
+          />
         </div>
 
         {/* Full day schedule -- book any open time slot */}
