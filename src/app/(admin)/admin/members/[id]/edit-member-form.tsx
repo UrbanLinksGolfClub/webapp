@@ -8,6 +8,7 @@ type Member = {
   address: string | null;
   membershipType: string | null;
   pinCode: string | null;
+  sgtUsername: string | null;
   role: string;
   status: string;
 };
@@ -56,6 +57,21 @@ export function EditMemberForm({ member }: { member: Member }) {
           defaultValue={member.pinCode ?? ""}
           className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2 dark:bg-ul-green"
         />
+      </div>
+      <div>
+        <label className="block text-sm font-medium" htmlFor="sgtUsername">
+          SGT username
+        </label>
+        <input
+          id="sgtUsername"
+          name="sgtUsername"
+          defaultValue={member.sgtUsername ?? ""}
+          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2 dark:bg-ul-green"
+        />
+        <p className="mt-1 text-xs text-ul-text-muted">
+          Must exactly match their SGT league username (case-sensitive) for handicap/stats to
+          resolve.
+        </p>
       </div>
       <div>
         <label className="block text-sm font-medium" htmlFor="status">

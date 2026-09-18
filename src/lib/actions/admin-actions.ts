@@ -26,6 +26,7 @@ const profileSchema = z.object({
   address: z.string().trim().optional(),
   membershipType: z.enum(["FOUNDING_MEMBER", "RACCOON_RATE"]).optional(),
   pinCode: z.string().trim().optional(),
+  sgtUsername: z.string().trim().optional(),
   role: z.enum(["MEMBER", "ADMIN"]),
   status: z.enum(["PENDING", "APPROVED", "SUSPENDED"]),
 });
@@ -43,6 +44,7 @@ export async function updateMemberAction(
     address: formData.get("address") || undefined,
     membershipType: formData.get("membershipType") || undefined,
     pinCode: formData.get("pinCode") || undefined,
+    sgtUsername: formData.get("sgtUsername") || undefined,
     role: formData.get("role"),
     status: formData.get("status"),
   });

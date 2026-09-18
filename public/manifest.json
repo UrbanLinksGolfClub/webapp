@@ -2,7 +2,7 @@
   "name": "Urban Links Golf Club",
   "short_name": "Urban Links",
   "description": "Book simulator tee times and check the league leaderboard.",
-  "start_url": "/dashboard",
+  "start_url": "/club",
   "display": "standalone",
   "background_color": "#efeee1",
   "theme_color": "#2f4939",
