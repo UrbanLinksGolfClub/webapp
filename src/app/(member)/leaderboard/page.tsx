@@ -29,9 +29,12 @@ export default async function LeaderboardPage(props: PageProps<"/leaderboard">) 
     const [standings, stats] = await Promise.all([
       selectedTour
         ? getCachedOrFetch({
-            endpoint: "tours/standings",
+            // Distinct from a plain "tours/standings" cache key so this
+            // can't serve a stale gross-scored result left over from
+            // before net was requested.
+            endpoint: "tours/standings-net",
             tourId: String(selectedTour.tourId),
-            fetcher: () => getTourStandings(selectedTour.tourId),
+            fetcher: () => getTourStandings(selectedTour.tourId, "net"),
           })
         : Promise.resolve(null),
       selectedTour
@@ -76,6 +79,9 @@ export default async function LeaderboardPage(props: PageProps<"/leaderboard">) 
 
             {standings && (
               <div className="border border-ul-cream-dark bg-ul-white">
+                <div className="border-b border-ul-cream-dark px-3 py-2 font-heading text-[9px] tracking-[0.18em] text-ul-gold-dark">
+                  NET STANDINGS
+                </div>
                 {standings.length === 0 ? (
                   <p className="p-5 text-sm text-ul-text-muted">No standings for this league yet.</p>
                 ) : (
