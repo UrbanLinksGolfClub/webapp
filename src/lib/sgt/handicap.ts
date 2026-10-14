@@ -1,53 +1,52 @@
 import { getCachedOrFetch } from "./cache";
 import { getTourStandings, type SgtStanding } from "./endpoints";
-import { getCachedTours, pickMostRecentTour } from "./tours";
+import { getCachedTours, sortToursByRecency } from "./tours";
 
-/**
- * Handicap comes from the standings of the most recently played league, not
- * members/user-sgt-data -- that endpoint returns `user_id: false` and empty
- * fields for every account we tested (confirmed against several real,
- * currently-playing members), so it appears broken on SGT's side. Standings
- * data is solid and already carries each player's hcp for that league.
- *
- * This also means a new league becomes the handicap source automatically as
- * soon as it's the most recent one by date -- no code change needed when
- * the club starts a new one.
- */
+// How many of the most recent leagues to check for a member's handicap. A
+// member who hasn't yet played in a brand-new league still shows their
+// last known number instead of nothing, while anyone who has played in
+// the newest league gets that one first (checked in recency order).
+const FALLBACK_LEAGUE_DEPTH = 3;
 
 function pickHandicap(standings: SgtStanding[], sgtUsername: string): string | null {
   const entry = standings.find((s) => s.user_name === sgtUsername);
   return entry && typeof entry.hcp === "number" ? String(entry.hcp) : null;
 }
 
-async function mostRecentStandings(): Promise<SgtStanding[] | null> {
+async function recentStandingsLists(): Promise<SgtStanding[][]> {
   const tours = await getCachedTours();
-  const mostRecent = pickMostRecentTour(tours);
-  if (!mostRecent) return null;
-
-  return getCachedOrFetch({
-    endpoint: "tours/standings",
-    tourId: String(mostRecent.tourId),
-    fetcher: () => getTourStandings(mostRecent.tourId),
-  });
+  const recent = sortToursByRecency(tours).slice(0, FALLBACK_LEAGUE_DEPTH);
+  return Promise.all(
+    recent.map((tour) =>
+      getCachedOrFetch({
+        endpoint: "tours/standings",
+        tourId: String(tour.tourId),
+        fetcher: () => getTourStandings(tour.tourId),
+      }).catch(() => [] as SgtStanding[])
+    )
+  );
 }
 
 /** Single-member lookup, e.g. for a profile page. */
 export async function getMemberHandicap(sgtUsername: string | null): Promise<string | null> {
   if (!sgtUsername || !process.env.SGT_CLUB_URL) return null;
   try {
-    const standings = await mostRecentStandings();
-    return standings ? pickHandicap(standings, sgtUsername) : null;
+    const lists = await recentStandingsLists();
+    for (const standings of lists) {
+      const hcp = pickHandicap(standings, sgtUsername);
+      if (hcp !== null) return hcp;
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
 /**
- * Batch version for a member list -- fetches tours/standings once (both
- * independently cached already) and looks every username up against that
- * same result, instead of each member triggering its own tours+standings
- * round trip. A list of N members would otherwise fire up to 2N live SGT
- * requests for the exact same data whenever the cache is cold.
+ * Batch version for a member list -- fetches each of the last few leagues'
+ * standings once (independently cached already) and resolves every
+ * username against that same shared result, instead of each member
+ * triggering its own round trips.
  */
 export async function getHandicapsForMembers(
   sgtUsernames: (string | null)[]
@@ -56,14 +55,19 @@ export async function getHandicapsForMembers(
     return sgtUsernames.map(() => null);
   }
 
-  let standings: SgtStanding[] | null = null;
+  let lists: SgtStanding[][];
   try {
-    standings = await mostRecentStandings();
+    lists = await recentStandingsLists();
   } catch {
     return sgtUsernames.map(() => null);
   }
 
-  if (!standings) return sgtUsernames.map(() => null);
-  const resolved = standings;
-  return sgtUsernames.map((username) => (username ? pickHandicap(resolved, username) : null));
+  return sgtUsernames.map((username) => {
+    if (!username) return null;
+    for (const standings of lists) {
+      const hcp = pickHandicap(standings, username);
+      if (hcp !== null) return hcp;
+    }
+    return null;
+  });
 }
