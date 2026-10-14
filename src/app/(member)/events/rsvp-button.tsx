@@ -13,16 +13,22 @@ export function RsvpButton({
   variant?: "solid" | "outline";
 }) {
   const [isIn, setIsIn] = useState(initiallyIn);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function toggle() {
     startTransition(async () => {
-      if (isIn) {
-        await cancelRsvpAction(eventId);
-        setIsIn(false);
-      } else {
-        await rsvpEventAction(eventId);
-        setIsIn(true);
+      setError(null);
+      try {
+        if (isIn) {
+          await cancelRsvpAction(eventId);
+          setIsIn(false);
+        } else {
+          await rsvpEventAction(eventId);
+          setIsIn(true);
+        }
+      } catch {
+        setError("Something went wrong -- try again.");
       }
     });
   }
@@ -32,13 +38,20 @@ export function RsvpButton({
   const outline = "border border-ul-cream/50 text-ul-cream hover:border-ul-gold hover:text-ul-gold";
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={pending}
-      className={`${base} ${variant === "solid" ? solid : outline}`}
-    >
-      {isIn ? "I'M IN ✓" : "I'M IN"}
-    </button>
+    <div>
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={pending}
+        className={`${base} ${variant === "solid" ? solid : outline}`}
+      >
+        {isIn ? "I'M IN ✓" : "I'M IN"}
+      </button>
+      {error && (
+        <p className="mt-1.5 text-xs text-red-400" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

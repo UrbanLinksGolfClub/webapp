@@ -12,7 +12,10 @@ export async function getRecentNotifications(memberId: string): Promise<Notifica
 
   const recentJoins = await prisma.bookingJoin.findMany({
     where: { booking: { memberId, status: "BOOKED" } },
-    include: { member: true, booking: true },
+    include: {
+      member: { select: { name: true } },
+      booking: { select: { startTime: true } },
+    },
     orderBy: { joinedAt: "desc" },
     take: 3,
   });
@@ -41,7 +44,7 @@ export async function getRecentNotifications(memberId: string): Promise<Notifica
       memberId: { not: memberId },
       startTime: { gt: now },
     },
-    include: { member: true },
+    include: { member: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
   if (newOpen) {

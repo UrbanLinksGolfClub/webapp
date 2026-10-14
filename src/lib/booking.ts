@@ -128,6 +128,47 @@ export async function createBooking({
 }
 
 /**
+ * An admin blocking the club off (maintenance, a private event) is not a
+ * personal reservation -- it must not be capped by MAX_STANDING_BOOKINGS or
+ * restricted to the admin's own membership window (an admin who happens to
+ * be Raccoon Rate shouldn't have club-wide blocks confined to 12am-8am).
+ * Still goes through the same advisory lock and exclusion constraint as any
+ * other booking, so it can't overlap a real reservation.
+ */
+export async function blockClub({
+  memberId,
+  startTime,
+  endTime,
+}: {
+  memberId: string;
+  startTime: Date;
+  endTime: Date;
+}) {
+  const now = new Date();
+  if (startTime <= now) {
+    throw new BookingError("Block times must be in the future.");
+  }
+  if (endTime <= startTime) {
+    throw new BookingError("Invalid time range.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BOOKING_LOCK_KEY})`;
+    try {
+      return await tx.booking.create({
+        data: { memberId, bookingType: "CLOSED", startTime, endTime, status: "BOOKED" },
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("bookings_no_overlap") || message.includes("23P01")) {
+        throw new BookingError("The club is already reserved during that time.");
+      }
+      throw err;
+    }
+  });
+}
+
+/**
  * Only a closed reservation can be edited -- an open one can only ever be
  * cancelled (see cancelBooking), since it may already have other members'
  * amenity claims riding on its current time.

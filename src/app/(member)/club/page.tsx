@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { MAX_STANDING_BOOKINGS } from "@/lib/booking";
 import { getRecentNotifications } from "@/lib/notifications";
 import { PHOTO_SRC } from "@/lib/photos";
-import { CLUB_TIMEZONE, formatClubDate, formatClubTime } from "@/lib/time";
+import { clubDateKey, formatClubDate, formatClubTime } from "@/lib/time";
 import { ClubBookingWidget } from "./club-booking-widget";
 import { OpenReservationsSection } from "./open-reservations-section";
 
@@ -222,10 +222,6 @@ export default async function ClubPage() {
       </div>
     </div>
   );
-}
-
-function clubDateKey(d: Date): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: CLUB_TIMEZONE }).format(d);
 }
 
 function formatUpNext(start: Date): string {

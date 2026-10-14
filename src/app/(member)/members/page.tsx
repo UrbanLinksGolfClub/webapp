@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatMembershipType } from "@/lib/format";
-import { getMemberHandicap } from "@/lib/sgt/handicap";
+import { getHandicapsForMembers } from "@/lib/sgt/handicap";
 
 export default async function MembersDirectoryPage() {
   const members = await prisma.member.findMany({
@@ -10,11 +10,9 @@ export default async function MembersDirectoryPage() {
     select: { id: true, name: true, membershipType: true, sgtUsername: true },
   });
 
-  // Run in parallel -- each lookup is independently cached, but a member
-  // list this size shouldn't wait on N sequential SGT round-trips.
-  const handicaps = await Promise.all(
-    members.map((m) => getMemberHandicap(m.sgtUsername))
-  );
+  // Fetches tours/standings once for the whole list, rather than once per
+  // member -- see getHandicapsForMembers for why that matters.
+  const handicaps = await getHandicapsForMembers(members.map((m) => m.sgtUsername));
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">

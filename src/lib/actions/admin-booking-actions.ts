@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { createBooking, BookingError } from "@/lib/booking";
+import { blockClub, BookingError } from "@/lib/booking";
 
 async function requireAdmin() {
   const session = await auth();
@@ -36,9 +36,8 @@ export async function blockClubAction(
   }
 
   try {
-    await createBooking({
+    await blockClub({
       memberId: session.user.id,
-      bookingType: "CLOSED",
       startTime: new Date(startTime),
       endTime: new Date(endTime),
     });

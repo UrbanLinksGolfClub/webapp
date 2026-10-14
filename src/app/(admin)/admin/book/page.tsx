@@ -13,7 +13,10 @@ export default async function AdminBookPage() {
       startTime: { lt: weekEnd },
       endTime: { gt: weekStart },
     },
-    include: { member: true, joins: { include: { member: true } } },
+    include: {
+      member: { select: { name: true } },
+      joins: { include: { member: { select: { name: true } } } },
+    },
     orderBy: { startTime: "asc" },
   });
 

@@ -29,7 +29,7 @@ export function EditMemberForm({ member }: { member: Member }) {
           id="address"
           name="address"
           defaultValue={member.address ?? ""}
-          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2 dark:bg-ul-green"
+          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2"
         />
       </div>
       <div>
@@ -40,7 +40,7 @@ export function EditMemberForm({ member }: { member: Member }) {
           id="membershipType"
           name="membershipType"
           defaultValue={member.membershipType ?? ""}
-          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2 dark:bg-ul-green"
+          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2"
         >
           <option value="">Not set</option>
           <option value="FOUNDING_MEMBER">Founding Member</option>
@@ -55,7 +55,7 @@ export function EditMemberForm({ member }: { member: Member }) {
           id="pinCode"
           name="pinCode"
           defaultValue={member.pinCode ?? ""}
-          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2 dark:bg-ul-green"
+          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2"
         />
       </div>
       <div>
@@ -66,7 +66,7 @@ export function EditMemberForm({ member }: { member: Member }) {
           id="sgtUsername"
           name="sgtUsername"
           defaultValue={member.sgtUsername ?? ""}
-          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2 dark:bg-ul-green"
+          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2"
         />
         <p className="mt-1 text-xs text-ul-text-muted">
           Must exactly match their SGT league username (case-sensitive) for handicap/stats to
@@ -81,7 +81,7 @@ export function EditMemberForm({ member }: { member: Member }) {
           id="status"
           name="status"
           defaultValue={member.status}
-          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2 dark:bg-ul-green"
+          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2"
         >
           <option value="PENDING">Pending</option>
           <option value="APPROVED">Approved</option>
@@ -96,7 +96,7 @@ export function EditMemberForm({ member }: { member: Member }) {
           id="role"
           name="role"
           defaultValue={member.role}
-          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2 dark:bg-ul-green"
+          className="mt-1 w-full rounded-md border border-ul-cream-dark px-3 py-2"
         >
           <option value="MEMBER">Member</option>
           <option value="ADMIN">Admin</option>
