@@ -1,8 +1,11 @@
 import { getCachedOrFetch } from "@/lib/sgt/cache";
 import { getTourStandings, getTourStats } from "@/lib/sgt/endpoints";
-import { getCachedTours, pickMostRecentTour } from "@/lib/sgt/tours";
+import { getCachedTours, sortToursByRecency } from "@/lib/sgt/tours";
 import { SgtNotConfigured, SgtErrorState } from "@/components/sgt-not-configured";
 import { StatsSection } from "./stats-section";
+
+// Stray test/placeholder entries in SGT that shouldn't be selectable here.
+const HIDDEN_TOUR_NAMES = new Set(["test league", "urban links golf league"]);
 
 export default async function LeaderboardPage(props: PageProps<"/leaderboard">) {
   if (!process.env.SGT_CLUB_URL) {
@@ -17,8 +20,11 @@ export default async function LeaderboardPage(props: PageProps<"/leaderboard">) 
   const searchParams = await props.searchParams;
 
   try {
-    const tours = await getCachedTours();
-    const mostRecent = pickMostRecentTour(tours);
+    const allTours = await getCachedTours();
+    const tours = sortToursByRecency(
+      allTours.filter((t) => !HIDDEN_TOUR_NAMES.has(t.name.trim().toLowerCase()))
+    );
+    const mostRecent = tours[0] ?? null;
 
     const requestedTourId = searchParams.tourId;
     const requested = Array.isArray(requestedTourId) ? requestedTourId[0] : requestedTourId;
