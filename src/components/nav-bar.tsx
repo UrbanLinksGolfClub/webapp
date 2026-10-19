@@ -6,11 +6,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/lib/actions/sign-out";
 
+// "Members" is temporarily hidden -- its handicap display depends on
+// SGT's members/user-sgt-data endpoint, which has been broken (returns
+// empty data for every account) since it was first found. Re-add once
+// that's resolved or the Club Combo Handicap source is sorted out.
 const LINKS = [
   { href: "/club", label: "Club" },
   { href: "/events", label: "Events" },
   { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/members", label: "Members" },
   { href: "/profile", label: "Profile" },
 ];
 

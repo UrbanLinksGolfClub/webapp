@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatMembershipType } from "@/lib/format";
 import { getHandicapsForMembers } from "@/lib/sgt/handicap";
@@ -28,10 +27,9 @@ export default async function MembersDirectoryPage() {
       ) : (
         <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {members.map((m, i) => (
-            <Link
+            <div
               key={m.id}
-              href={`/members/${m.id}`}
-              className="flex items-start justify-between gap-3 border border-ul-cream-dark bg-ul-white p-5 transition-colors hover:border-ul-green"
+              className="flex items-start justify-between gap-3 border border-ul-cream-dark bg-ul-white p-5"
             >
               <div>
                 <div className="font-heading text-lg text-ul-green">{m.name}</div>
@@ -47,7 +45,7 @@ export default async function MembersDirectoryPage() {
                   <div className="font-heading text-xl text-ul-green">{handicaps[i]}</div>
                 </div>
               )}
-            </Link>
+            </div>
           ))}
         </div>
       )}
