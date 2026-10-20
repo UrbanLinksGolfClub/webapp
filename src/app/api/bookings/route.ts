@@ -30,7 +30,16 @@ export async function GET(request: NextRequest) {
     orderBy: { startTime: "asc" },
   });
 
-  return NextResponse.json({ bookings });
+  // Members can see who's hosting an open session (they might join it),
+  // but never who booked a closed one -- redact server-side rather than
+  // just hiding it in the UI, since otherwise the name would still be
+  // sitting in the response JSON for anyone to read via devtools.
+  const sanitized = bookings.map((b) => ({
+    ...b,
+    member: b.bookingType === "OPEN" ? b.member : null,
+  }));
+
+  return NextResponse.json({ bookings: sanitized });
 }
 
 export async function POST(request: NextRequest) {

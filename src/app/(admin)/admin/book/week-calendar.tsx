@@ -19,6 +19,15 @@ type Booking = {
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const DAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export function WeekCalendar({
   weekStart,
   bookings,
@@ -108,16 +117,19 @@ export function WeekCalendar({
                         type="button"
                         disabled={!b}
                         onClick={() => b && setSelectedId(b.id)}
-                        className={`h-[30px] ${
+                        title={b ? `${b.hostName} (${b.bookingType.toLowerCase()})` : undefined}
+                        className={`flex h-[30px] items-center justify-center overflow-hidden font-heading text-[7px] leading-none ${
                           !b
                             ? "bg-ul-cream"
                             : b.id === selectedId
                               ? "ring-2 ring-inset ring-ul-text"
                               : ""
-                        } ${b?.bookingType === "CLOSED" ? "bg-ul-green cursor-pointer" : ""} ${
-                          b?.bookingType === "OPEN" ? "bg-ul-gold cursor-pointer" : ""
+                        } ${b?.bookingType === "CLOSED" ? "bg-ul-green text-ul-cream cursor-pointer" : ""} ${
+                          b?.bookingType === "OPEN" ? "bg-ul-gold text-ul-green-dark cursor-pointer" : ""
                         }`}
-                      />
+                      >
+                        {b ? initials(b.hostName) : ""}
+                      </button>
                     );
                   })}
                 </div>

@@ -6,13 +6,19 @@ import { addClubDays, clubDateKey, formatClubDate } from "@/lib/time";
 import { usePolling } from "@/lib/use-polling";
 
 type BookingKind = "CLOSED" | "OPEN";
-type ExistingBooking = { startTime: string; endTime: string; bookingType: BookingKind };
+type ExistingBooking = {
+  startTime: string;
+  endTime: string;
+  bookingType: BookingKind;
+  member: { name: string } | null;
+};
 type Slot = {
   hour: number;
   start: Date;
   end: Date;
   available: boolean;
   bookingType: BookingKind | null;
+  hostName: string | null;
 };
 
 // Anchored to the club's own timezone, not the browser's -- otherwise a
@@ -112,6 +118,7 @@ export function ClubBookingWidget({
         end,
         available: !isPast && !conflicting,
         bookingType: conflicting?.bookingType ?? null,
+        hostName: conflicting?.member?.name ?? null,
       };
     }).filter((s): s is Slot => s !== null);
   }, [date, bookings, isRaccoonRate]);
@@ -215,7 +222,11 @@ export function ClubBookingWidget({
               <span
                 className={`font-heading text-[10px] tracking-[0.16em] ${slot.available ? "text-ul-gold-dark" : "text-ul-text-muted"}`}
               >
-                {slot.available ? "AVAILABLE — RESERVE" : slot.bookingType === "OPEN" ? "OPEN" : "CLOSED"}
+                {slot.available
+                  ? "AVAILABLE — RESERVE"
+                  : slot.bookingType === "OPEN"
+                    ? `OPEN${slot.hostName ? ` · ${slot.hostName.toUpperCase()}` : ""}`
+                    : "CLOSED"}
               </span>
             </button>
           ))}
