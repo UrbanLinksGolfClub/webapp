@@ -11,7 +11,7 @@ export async function getRecentNotifications(memberId: string): Promise<Notifica
   const notifications: Notification[] = [];
 
   const recentJoins = await prisma.bookingJoin.findMany({
-    where: { booking: { memberId, status: "BOOKED" } },
+    where: { booking: { memberId, status: "BOOKED", startTime: { gt: now } } },
     include: {
       member: { select: { name: true } },
       booking: { select: { startTime: true } },
