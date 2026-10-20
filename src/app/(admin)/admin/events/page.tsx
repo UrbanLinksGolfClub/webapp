@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatClubDateTime } from "@/lib/time";
 import { CreateEventForm } from "./create-event-form";
@@ -32,16 +33,21 @@ export default async function AdminEventsPage() {
                 </td>
                 <td className="p-3 text-ul-green">{e._count.rsvps}</td>
                 <td className="p-3">
-                  <form
-                    action={async () => {
-                      "use server";
-                      await deleteEventAction(e.id);
-                    }}
-                  >
-                    <button type="submit" className="text-red-700 underline">
-                      Delete
-                    </button>
-                  </form>
+                  <div className="flex items-center gap-3">
+                    <Link href={`/admin/events/${e.id}`} className="text-ul-green underline">
+                      Edit
+                    </Link>
+                    <form
+                      action={async () => {
+                        "use server";
+                        await deleteEventAction(e.id);
+                      }}
+                    >
+                      <button type="submit" className="text-red-700 underline">
+                        Delete
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

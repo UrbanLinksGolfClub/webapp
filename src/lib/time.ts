@@ -72,6 +72,26 @@ export function parseClubDateTimeLocal(value: string): Date {
   return clubWallTimeToDate(datePart, Number(hourStr), Number(minuteStr ?? 0));
 }
 
+/** Inverse of parseClubDateTimeLocal -- formats a Date as a
+ * datetime-local-compatible string ("2026-11-15T16:00") representing its
+ * Eastern wall-clock value, for pre-filling an edit form's input with the
+ * time it should show, not whatever the server's own timezone would give. */
+export function formatClubDateTimeLocal(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CLUB_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  // Some engines render midnight as "24" with hour12: false.
+  const hour = map.hour === "24" ? "00" : map.hour;
+  return `${map.year}-${map.month}-${map.day}T${hour}:${map.minute}`;
+}
+
 /** Start of the current club-calendar week (Sunday 00:00 in the club's
  * timezone), as a real UTC instant -- not the server's local midnight. */
 export function startOfClubWeek(reference: Date = new Date()): Date {
