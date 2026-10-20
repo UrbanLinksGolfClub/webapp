@@ -2,6 +2,13 @@ import { getCachedOrFetch } from "./cache";
 import { getTours } from "./endpoints";
 import type { SgtTour } from "./endpoints";
 
+/** How many of the most recent leagues to check when looking up a member's
+ * numbers. More than one tour can be running at once -- e.g. the Northern
+ * Kentucky Cup's "High Cap Twigs" and "Low Cap Sticks" flights both count as
+ * current -- so picking only the single newest-by-date tour can miss a
+ * member who is playing in the other concurrent one. */
+export const RECENT_LEAGUE_DEPTH = 3;
+
 function tourSortDate(t: { start_date?: string; end_date?: string }): number {
   const d = t.end_date ?? t.start_date;
   return d ? new Date(d).getTime() : 0;
@@ -20,11 +27,4 @@ export async function getCachedTours(): Promise<SgtTour[]> {
  * being the most recent one played). */
 export function sortToursByRecency(tours: SgtTour[]): SgtTour[] {
   return [...tours].sort((a, b) => tourSortDate(b) - tourSortDate(a));
-}
-
-/** Whichever league was played most recently -- this is what makes the
- * leaderboard automatically follow a new league once it starts, with no
- * code change needed. */
-export function pickMostRecentTour(tours: SgtTour[]): SgtTour | null {
-  return sortToursByRecency(tours)[0] ?? null;
 }

@@ -1,12 +1,6 @@
 import { getCachedOrFetch } from "./cache";
 import { getTourStandings, type SgtStanding } from "./endpoints";
-import { getCachedTours, sortToursByRecency } from "./tours";
-
-// How many of the most recent leagues to check for a member's handicap. A
-// member who hasn't yet played in a brand-new league still shows their
-// last known number instead of nothing, while anyone who has played in
-// the newest league gets that one first (checked in recency order).
-const FALLBACK_LEAGUE_DEPTH = 3;
+import { getCachedTours, sortToursByRecency, RECENT_LEAGUE_DEPTH } from "./tours";
 
 function pickHandicap(standings: SgtStanding[], sgtUsername: string): string | null {
   const entry = standings.find((s) => s.user_name === sgtUsername);
@@ -15,7 +9,7 @@ function pickHandicap(standings: SgtStanding[], sgtUsername: string): string | n
 
 async function recentStandingsLists(): Promise<SgtStanding[][]> {
   const tours = await getCachedTours();
-  const recent = sortToursByRecency(tours).slice(0, FALLBACK_LEAGUE_DEPTH);
+  const recent = sortToursByRecency(tours).slice(0, RECENT_LEAGUE_DEPTH);
   return Promise.all(
     recent.map((tour) =>
       getCachedOrFetch({
