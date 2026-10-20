@@ -1,4 +1,3 @@
-import { getMemberHandicap } from "@/lib/sgt/handicap";
 import { getMemberLeagueStats } from "@/lib/sgt/member-stats";
 
 export async function SgtStatsCard({
@@ -8,10 +7,7 @@ export async function SgtStatsCard({
   sgtUsername: string | null;
   emptyMessage?: string;
 }) {
-  const [handicap, stats] = await Promise.all([
-    getMemberHandicap(sgtUsername),
-    getMemberLeagueStats(sgtUsername),
-  ]);
+  const stats = await getMemberLeagueStats(sgtUsername);
 
   return (
     <div className="border border-ul-cream-dark bg-ul-white p-6">
@@ -24,34 +20,20 @@ export async function SgtStatsCard({
         <p className="mt-3 text-sm text-ul-text-muted">
           Simulator Golf Tour isn&apos;t connected for the club yet.
         </p>
-      ) : !handicap && stats.length === 0 ? (
+      ) : stats.length === 0 ? (
         <p className="mt-3 text-sm text-ul-text-muted">
           No SGT stats available yet -- link your handle and play in the current league to see
           numbers here.
         </p>
       ) : (
-        <>
-          {handicap && (
-            <div className="mt-4 border-b border-ul-cream-dark pb-4">
-              <div className="font-heading text-[9px] tracking-[0.16em] text-ul-gold-dark">
-                HANDICAP
-              </div>
-              <div className="mt-1 font-heading text-4xl text-ul-green">{handicap}</div>
+        <dl className="mt-4 divide-y divide-ul-cream-dark">
+          {stats.map(({ category, label, value }) => (
+            <div key={category} className="flex items-center justify-between py-2.5">
+              <dt className="font-heading text-xs tracking-[0.1em] text-ul-text-muted">{label}</dt>
+              <dd className="font-heading text-lg text-ul-green">{value}</dd>
             </div>
-          )}
-          {stats.length > 0 && (
-            <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-              {stats.map(({ category, label, value }) => (
-                <div key={category}>
-                  <dt className="font-heading text-[9px] tracking-[0.16em] text-ul-text-muted">
-                    {label}
-                  </dt>
-                  <dd className="mt-1 font-heading text-xl text-ul-green">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </>
+          ))}
+        </dl>
       )}
     </div>
   );
