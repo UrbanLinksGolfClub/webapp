@@ -23,6 +23,12 @@ const PHOTO_KEYS = [
   "PEBBLE_BEACH",
 ] as const;
 
+// Stored as a data: URI directly on the row rather than in separate object
+// storage -- simplest option for a small club app with occasional admin
+// uploads, no new service/signup needed. Capped well under what would
+// meaningfully bloat the table.
+const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
+
 export async function createEventAction(
   _prevState: CreateEventState,
   formData: FormData
@@ -35,6 +41,7 @@ export async function createEventAction(
   const startTime = formData.get("startTime");
   const rsvpDeadline = formData.get("rsvpDeadline");
   const photoKey = formData.get("photoKey");
+  const photoFile = formData.get("photo");
 
   if (typeof title !== "string" || !title.trim()) {
     return { error: "Title is required." };
@@ -46,6 +53,18 @@ export async function createEventAction(
     return { error: "Invalid photo." };
   }
 
+  let photoUrl: string | null = null;
+  if (photoFile instanceof File && photoFile.size > 0) {
+    if (!photoFile.type.startsWith("image/")) {
+      return { error: "Uploaded photo must be an image file." };
+    }
+    if (photoFile.size > MAX_PHOTO_BYTES) {
+      return { error: "Uploaded photo must be smaller than 4MB." };
+    }
+    const buffer = Buffer.from(await photoFile.arrayBuffer());
+    photoUrl = `data:${photoFile.type};base64,${buffer.toString("base64")}`;
+  }
+
   await prisma.event.create({
     data: {
       title: title.trim(),
@@ -55,6 +74,7 @@ export async function createEventAction(
       rsvpDeadline:
         typeof rsvpDeadline === "string" && rsvpDeadline ? new Date(rsvpDeadline) : null,
       photoKey: photoKey as (typeof PHOTO_KEYS)[number],
+      photoUrl,
     },
   });
 

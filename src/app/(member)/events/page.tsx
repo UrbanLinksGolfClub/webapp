@@ -1,8 +1,7 @@
-import Image from "next/image";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { PHOTO_SRC } from "@/lib/photos";
 import { formatClubDate, formatClubTime } from "@/lib/time";
+import { EventPhoto } from "@/components/event-photo";
 import { RsvpButton } from "./rsvp-button";
 
 export default async function EventsPage() {
@@ -37,10 +36,9 @@ export default async function EventsPage() {
         <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {hero && (
             <div id={hero.id} className="relative col-span-2 row-span-2 min-h-[430px] overflow-hidden">
-              <Image
-                src={PHOTO_SRC[hero.photoKey]}
-                alt=""
-                fill
+              <EventPhoto
+                photoUrl={hero.photoUrl}
+                photoKey={hero.photoKey}
                 sizes="(min-width: 640px) 50vw, 100vw"
                 priority
                 className="object-cover"
@@ -79,10 +77,9 @@ export default async function EventsPage() {
 
           {rest.map((e) => (
             <div key={e.id} id={e.id} className="relative col-span-2 min-h-[207px] overflow-hidden sm:col-span-1">
-              <Image
-                src={PHOTO_SRC[e.photoKey]}
-                alt=""
-                fill
+              <EventPhoto
+                photoUrl={e.photoUrl}
+                photoKey={e.photoKey}
                 sizes="(min-width: 640px) 25vw, 100vw"
                 className="object-cover"
               />

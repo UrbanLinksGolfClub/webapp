@@ -6,6 +6,7 @@ import { MAX_STANDING_BOOKINGS } from "@/lib/booking";
 import { getRecentNotifications } from "@/lib/notifications";
 import { PHOTO_SRC } from "@/lib/photos";
 import { clubDateKey, formatClubDate, formatClubTime } from "@/lib/time";
+import { EventPhoto } from "@/components/event-photo";
 import { ClubBookingWidget } from "./club-booking-widget";
 import { OpenReservationsSection } from "./open-reservations-section";
 
@@ -169,10 +170,9 @@ export default async function ClubPage() {
           {nextEvent ? (
             <div className="max-w-md">
               <div className="relative h-[186px] overflow-hidden">
-                <Image
-                  src={PHOTO_SRC[nextEvent.photoKey]}
-                  alt=""
-                  fill
+                <EventPhoto
+                  photoUrl={nextEvent.photoUrl}
+                  photoKey={nextEvent.photoKey}
                   sizes="(min-width: 768px) 448px, 100vw"
                   className="object-cover"
                 />

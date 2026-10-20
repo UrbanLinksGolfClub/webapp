@@ -57,7 +57,7 @@ export function CreateEventForm() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-ul-text">Photo</label>
+        <label className="block text-sm font-medium text-ul-text">Stock photo (fallback)</label>
         <select name="photoKey" className="mt-1 w-full border border-ul-cream-dark px-3 py-2">
           {PHOTOS.map(([value, label]) => (
             <option key={value} value={value}>
@@ -65,6 +65,18 @@ export function CreateEventForm() {
             </option>
           ))}
         </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ul-text">Upload a photo (optional)</label>
+        <input
+          type="file"
+          name="photo"
+          accept="image/*"
+          className="mt-1 w-full border border-ul-cream-dark px-3 py-2 text-sm"
+        />
+        <p className="mt-1 text-xs text-ul-text-muted">
+          If you upload one, it&apos;s used instead of the stock photo above. Up to 4MB.
+        </p>
       </div>
       {state.error && (
         <p className="text-sm text-red-700" role="alert">

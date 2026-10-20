@@ -149,6 +149,7 @@ model Event {
   startTime     DateTime
   rsvpDeadline  DateTime?
   photoKey      PhotoKey  @default(CLUB_INTERIOR)
+  photoUrl      String?
   createdAt     DateTime  @default(now())
 
   rsvps EventRsvp[]
