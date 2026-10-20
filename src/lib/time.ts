@@ -30,13 +30,13 @@ export function addClubDays(dateKey: string, days: number): string {
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
-/** The real UTC instant at which it becomes `hour:00` on `dateKey` in the
- * club's timezone -- accounts for whatever DST offset applies that day, by
- * guessing, checking what that guess reads as in the club's timezone, and
- * correcting by the difference. */
-export function clubWallTimeToDate(dateKey: string, hour = 0): Date {
+/** The real UTC instant at which it becomes `hour:minute` on `dateKey` in
+ * the club's timezone -- accounts for whatever DST offset applies that
+ * day, by guessing, checking what that guess reads as in the club's
+ * timezone, and correcting by the difference. */
+export function clubWallTimeToDate(dateKey: string, hour = 0, minute = 0): Date {
   const [y, m, d] = dateKey.split("-").map(Number);
-  const guess = new Date(Date.UTC(y, m - 1, d, hour));
+  const guess = new Date(Date.UTC(y, m - 1, d, hour, minute));
 
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: CLUB_TIMEZONE,
@@ -56,6 +56,20 @@ export function clubWallTimeToDate(dateKey: string, hour = 0): Date {
     Number(map.minute)
   );
   return new Date(guess.getTime() + (guess.getTime() - asUtc));
+}
+
+/**
+ * Parses a <input type="datetime-local"> value (e.g. "2026-11-15T16:00")
+ * as wall-clock time in the club's timezone and returns the real UTC
+ * instant. A datetime-local value has no timezone of its own -- plain
+ * `new Date(value)` on it is parsed in whatever timezone is *running the
+ * code*, which on the server is UTC, not Eastern. An admin entering 4pm
+ * would otherwise have it stored as 4pm UTC and display back as 11am.
+ */
+export function parseClubDateTimeLocal(value: string): Date {
+  const [datePart, timePart = "00:00"] = value.split("T");
+  const [hourStr, minuteStr] = timePart.split(":");
+  return clubWallTimeToDate(datePart, Number(hourStr), Number(minuteStr ?? 0));
 }
 
 /** Start of the current club-calendar week (Sunday 00:00 in the club's

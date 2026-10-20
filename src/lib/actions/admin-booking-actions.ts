@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { blockClub, BookingError } from "@/lib/booking";
+import { parseClubDateTimeLocal } from "@/lib/time";
 
 async function requireAdmin() {
   const session = await auth();
@@ -38,8 +39,8 @@ export async function blockClubAction(
   try {
     await blockClub({
       memberId: session.user.id,
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
+      startTime: parseClubDateTimeLocal(startTime),
+      endTime: parseClubDateTimeLocal(endTime),
     });
   } catch (err) {
     if (err instanceof BookingError) return { error: err.message };

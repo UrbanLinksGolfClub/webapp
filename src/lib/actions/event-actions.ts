@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { parseClubDateTimeLocal } from "@/lib/time";
 
 async function requireAdmin() {
   const session = await auth();
@@ -70,9 +71,11 @@ export async function createEventAction(
       title: title.trim(),
       description: typeof description === "string" && description.trim() ? description.trim() : null,
       location: typeof location === "string" && location.trim() ? location.trim() : null,
-      startTime: new Date(startTime),
+      startTime: parseClubDateTimeLocal(startTime),
       rsvpDeadline:
-        typeof rsvpDeadline === "string" && rsvpDeadline ? new Date(rsvpDeadline) : null,
+        typeof rsvpDeadline === "string" && rsvpDeadline
+          ? parseClubDateTimeLocal(rsvpDeadline)
+          : null,
       photoKey: photoKey as (typeof PHOTO_KEYS)[number],
       photoUrl,
     },
