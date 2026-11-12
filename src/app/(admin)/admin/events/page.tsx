@@ -31,7 +31,11 @@ export default async function AdminEventsPage() {
                 <td className="p-3 text-ul-green">
                   {formatClubDateTime(e.startTime, { dateStyle: "medium", timeStyle: "short" })}
                 </td>
-                <td className="p-3 text-ul-green">{e._count.rsvps}</td>
+                <td className="p-3 text-ul-green">
+                  <Link href={`/admin/events/${e.id}#rsvps`} className="underline">
+                    {e._count.rsvps}
+                  </Link>
+                </td>
                 <td className="p-3">
                   <div className="flex items-center gap-3">
                     <Link href={`/admin/events/${e.id}`} className="text-ul-green underline">
