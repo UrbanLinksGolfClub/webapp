@@ -24,8 +24,16 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  // Leave Next's own JS/CSS chunks and anything off-site to the browser.
+  // Routing them through here meant a dropped connection answered a chunk
+  // request with nothing (they're never cached), crashing the page.
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/_next/")) return;
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(() =>
+      caches.match(event.request).then((cached) => cached || Response.error())
+    )
   );
 });
 
